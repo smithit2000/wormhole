@@ -51,6 +51,7 @@ type HumanAddr = String;
 const CHAIN_ID: u16 = 3;
 
 const WRAPPED_ASSET_UPDATING: &str = "updating";
+const WRAPPED_ASSET_LABEL: &str = "WrappedCW20";
 
 pub enum TransferType<A> {
     WithoutPayload,
@@ -392,7 +393,7 @@ fn handle_attest_meta(
                 }),
             })?,
             funds: vec![],
-            label: String::new(),
+            label: WRAPPED_ASSET_LABEL.to_string(),
         })
     };
     wrapped_asset_seq(deps.storage).save(&asset_id, &sequence)?;
