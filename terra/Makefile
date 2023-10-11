@@ -4,7 +4,7 @@ nft_bridge_SOURCE=nft_bridge
 
 SOURCE_FILES=$(shell find . -name "*.rs" -or -name "*.lock" -or -name "*.toml" | grep -v target)
 
-PACKAGES=$(shell find . -name "Cargo.toml" | grep -E 'packages|contracts' | xargs cat | grep "name *=" | cut -d' ' -f3 | sed s/\"//g | sed s/-/_/g)
+PACKAGES=$(shell find . -name "Cargo.toml" | grep -E 'contracts' | xargs cat | grep "name *=" | cut -d' ' -f3 | sed s/\"//g | sed s/-/_/g | grep -v wormhole_bridge_terra)
 WASMS=$(patsubst %, artifacts/%.wasm, $(PACKAGES))
 
 -include ../Makefile.help
@@ -24,6 +24,7 @@ endif
 
 $(WASMS) artifacts/checksums.txt: $(SOURCE_FILES)
 	DOCKER_BUILDKIT=1 docker build --target artifacts -o artifacts .
+	sed -i 's/interface_version_7/interface_version_8/g' $(WASMS)
 
 payer-$(NETWORK):
 	$(error Missing private key in payer-$(NETWORK))
