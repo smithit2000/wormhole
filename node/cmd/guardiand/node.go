@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -39,6 +40,7 @@ import (
 	"github.com/certusone/wormhole/node/pkg/node"
 	"github.com/certusone/wormhole/node/pkg/p2p"
 	"github.com/certusone/wormhole/node/pkg/supervisor"
+	promremotew "github.com/certusone/wormhole/node/pkg/telemetry/prom_remote_write"
 	libp2p_crypto "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/spf13/cobra"
@@ -199,6 +201,9 @@ var (
 
 	// Loki cloud logging parameters
 	telemetryLokiURL *string
+
+	// Prometheus remote write URL
+	promRemoteURL *string
 
 	chainGovernorEnabled *bool
 
@@ -367,6 +372,8 @@ func init() {
 		"Disable telemetry")
 
 	telemetryLokiURL = NodeCmd.Flags().String("telemetryLokiURL", "", "Loki cloud logging URL")
+
+	promRemoteURL = NodeCmd.Flags().String("promRemoteURL", "", "Prometheus remote write URL (Grafana)")
 
 	chainGovernorEnabled = NodeCmd.Flags().Bool("chainGovernorEnabled", false, "Run the chain governor")
 
@@ -1033,6 +1040,41 @@ func runNode(cmd *cobra.Command, args []string) {
 		gatewayRelayerWormchainConn, err = wormconn.NewConn(rootCtx, *wormchainURL, wormchainKey, wormchainId)
 		if err != nil {
 			logger.Fatal("failed to connect to wormchain", zap.Error(err), zap.String("component", "gwrelayer"))
+		}
+
+	}
+	usingPromRemoteWrite := *promRemoteURL != ""
+	if usingPromRemoteWrite {
+		var info promremotew.PromTelemetryInfo
+		info.PromRemoteURL = *promRemoteURL
+		info.NodeName = *nodeName
+
+		// Grab the port from the statusAddr
+		statusStrings := strings.Split(*statusAddr, ":")
+		statusPort64, err := strconv.ParseUint(statusStrings[len(statusStrings)-1], 10, 16) // the last element is the port
+		if (err != nil) || (statusPort64 == 0) {
+			logger.Fatal("Please specify a valid --statusAddr")
+		} else {
+			// TODO: check when the http server gets started.
+			info.StatusPort = uint16(statusPort64)
+			promLogger := logger.With(zap.String("component", "prometheus_scraper"))
+			errC := make(chan error)
+			common.StartRunnable(rootCtx, errC, false, "prometheus_scraper", func(ctx context.Context) error {
+				t := time.NewTicker(15 * time.Second)
+
+				for {
+					select {
+					case <-ctx.Done():
+						return nil
+					case <-t.C:
+						err := promremotew.ScrapeAndSendLocalMetrics(ctx, info, promLogger)
+						if err != nil {
+							promLogger.Error("ScrapeAndSendLocalMetrics error", zap.Error(err))
+							continue
+						}
+					}
+				}
+			})
 		}
 	}
 

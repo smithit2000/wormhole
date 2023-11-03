@@ -10,10 +10,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/certusone/wormhole/node/pkg/common"
 	"github.com/certusone/wormhole/node/pkg/telemetry"
+	promremotew "github.com/certusone/wormhole/node/pkg/telemetry/prom_remote_write"
 	"github.com/certusone/wormhole/node/pkg/version"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	ipfslog "github.com/ipfs/go-log/v2"
@@ -39,6 +42,7 @@ var (
 	telemetryLokiURL  *string
 	telemetryNodeName *string
 	statusAddr        *string
+	promRemoteURL     *string
 )
 
 const DEV_NETWORK_ID = "/wormhole/dev"
@@ -58,6 +62,7 @@ func init() {
 	telemetryLokiURL = QueryServerCmd.Flags().String("telemetryLokiURL", "", "Loki cloud logging URL")
 	telemetryNodeName = QueryServerCmd.Flags().String("telemetryNodeName", "", "Node name used in telemetry")
 	statusAddr = QueryServerCmd.Flags().String("statusAddr", "[::]:6060", "Listen address for status server (disabled if blank)")
+	promRemoteURL = QueryServerCmd.Flags().String("promRemoteURL", "", "Prometheus remote write URL (Grafana)")
 }
 
 var QueryServerCmd = &cobra.Command{
@@ -171,6 +176,7 @@ func runQueryServer(cmd *cobra.Command, args []string) {
 		}
 	}()
 
+	usingPromRemoteWrite := *promRemoteURL != ""
 	// Start the status server
 	if *statusAddr != "" {
 		go func() {
@@ -181,6 +187,30 @@ func runQueryServer(cmd *cobra.Command, args []string) {
 				logger.Fatal("Status server closed unexpectedly", zap.Error(err))
 			}
 		}()
+		// Can only start prometheus scraping if status server is running
+		if usingPromRemoteWrite {
+			var info promremotew.PromTelemetryInfo
+			info.PromRemoteURL = *promRemoteURL
+			info.NodeName = *telemetryNodeName
+
+			// Grab the port from the statusAddr
+			statusStrings := strings.Split(*statusAddr, ":")
+			statusPort64, err := strconv.ParseUint(statusStrings[len(statusStrings)-1], 10, 16) // the last element is the port
+			if (err != nil) || (statusPort64 == 0) {
+				logger.Fatal("Please specify a valid --statusAddr")
+			} else {
+				// TODO: check when the http server gets started.
+				info.StatusPort = uint16(statusPort64)
+				err := RunPrometheusScraper(ctx, logger, info)
+				if err != nil {
+					logger.Fatal("Failed to start prometheus scraper", zap.Error(err))
+				}
+			}
+		}
+	} else {
+		if usingPromRemoteWrite {
+			logger.Fatal("Cannot use --promRemoteURL without --statusAddr")
+		}
 	}
 
 	// Handle SIGTERM
