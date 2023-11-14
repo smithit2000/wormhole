@@ -1,15 +1,15 @@
 FROM docker.io/python:3.10@sha256:eeed7cac682f9274d183f8a7533ee1360a26acb3616aa712b2be7896f80d8c5f as algorand-contracts-build
 
-RUN mkdir algosdk
-RUN --mount=type=cache,target=/algosdk wget https://github.com/algorand/go-algorand/releases/download/v3.19.0-stable/node_stable_linux-amd64_3.19.0.tar.gz --output-document=algosdk/node-stable-linux.tar.gz
-RUN --mount=type=cache,target=/algosdk tar --extract --file algosdk/node-stable-linux.tar.gz bin/goal && rm algosdk/node-stable-linux.tar.gz
+RUN wget https://github.com/algorand/go-algorand/releases/download/v3.19.0-stable/node_stable_linux-amd64_3.19.0.tar.gz
+RUN tar --extract --file node_stable_linux-amd64_3.19.0.tar.gz bin/goal && rm node_stable_linux-amd64_3.19.0.tar.gz
 
 RUN mkdir teal
-COPY Pipfile Pipfile.lock *.py ./
+COPY Pipfile Pipfile.lock ./
 
 RUN python3 -m pip install pipenv
 RUN pipenv install
 
+COPY *.py ./
 RUN pipenv run python3 admin.py --mainnet --genTeal
 
 FROM scratch AS algorand-contracts-export
