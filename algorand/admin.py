@@ -372,7 +372,7 @@ class PortalCore:
         return -1
 
     def genUpgradePayload(self):
-        approval1, clear1 = getCoreContracts(False, self.args.core_approve, self.args.core_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
+        approval1, clear1 = getCoreContracts(False, self.args.core_approve, self.args.core_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
 
         approval2, clear2 = get_token_bridge(False, self.args.token_approve, self.args.token_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
 
@@ -418,7 +418,7 @@ class PortalCore:
         client: AlgodClient,
         sender: Account,
     ) -> int:
-        approval, clear = getCoreContracts(False, self.args.core_approve, self.args.core_clear, client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
+        approval, clear = getCoreContracts(False, self.args.core_approve, self.args.core_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
 
         globalSchema = transaction.StateSchema(num_uints=8, num_byte_slices=40)
         localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=16)
@@ -1305,7 +1305,7 @@ class PortalCore:
     def updateCore(self) -> None:
         print("Updating the core contracts")
         if self.args.approve == "" and self.args.clear == "":
-            approval, clear = getCoreContracts(False, self.args.core_approve, self.args.core_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
+            approval, clear = getCoreContracts(False, self.args.core_approve, self.args.core_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
             print("core approval " + decode_address(approval["hash"]).hex())
             print("core clear " + decode_address(clear["hash"]).hex())
         else:
@@ -1377,7 +1377,7 @@ class PortalCore:
     def genTeal(self) -> None:
         print((True, self.args.core_approve, self.args.core_clear, self.client, self.seed_amt, self.tsig, self.devnet or self.args.testnet))
         devmode = (self.devnet or self.args.testnet) and not self.args.prodTeal
-        approval1, clear1 = getCoreContracts(True, self.args.core_approve, self.args.core_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = devmode)
+        approval1, clear1 = getCoreContracts(True, self.args.core_approve, self.args.core_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = devmode)
         print("Generating the teal for the core contracts")
         approval2, clear2 = get_token_bridge(True, self.args.token_approve, self.args.token_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = devmode)
         print("Generating the teal for the token contracts: " + str(len(b64decode(approval2["result"]))))
