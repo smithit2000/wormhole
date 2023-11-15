@@ -364,7 +364,7 @@ class PortalCore:
     def genUpgradePayload(self):
         approval1, clear1 = getCoreContracts(False, self.args.core_approve, self.args.core_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
 
-        approval2, clear2 = get_token_bridge(False, self.args.token_approve, self.args.token_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
+        approval2, clear2 = get_token_bridge(False, self.args.token_approve, self.args.token_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
 
         return self.genUpgradePayloadBody(approval1, approval2)
 
@@ -446,7 +446,7 @@ class PortalCore:
         client: AlgodClient,
         sender: Account,
     ) -> int:
-        approval, clear = get_token_bridge(False, self.args.token_approve, self.args.token_clear, client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
+        approval, clear = get_token_bridge(False, self.args.token_approve, self.args.token_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
 
         if len(b64decode(approval["result"])) > 4060:
             print("token bridge contract is too large... This might prevent updates later")
@@ -1327,7 +1327,7 @@ class PortalCore:
 
     def updateToken(self) -> None:
         if self.args.approve == "" and self.args.clear == "":
-            approval, clear = get_token_bridge(False, self.args.token_approve, self.args.token_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
+            approval, clear = get_token_bridge(False, self.args.token_approve, self.args.token_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = self.devnet or self.args.testnet)
         else:
             pprint.pprint([self.args.approve, self.args.clear])
             with open(self.args.approve, encoding = 'utf-8') as f:
@@ -1369,7 +1369,7 @@ class PortalCore:
         devmode = (self.devnet or self.args.testnet) and not self.args.prodTeal
         approval1, clear1 = getCoreContracts(True, self.args.core_approve, self.args.core_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = devmode)
         print("Generating the teal for the core contracts")
-        approval2, clear2 = get_token_bridge(True, self.args.token_approve, self.args.token_clear, self.client, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = devmode)
+        approval2, clear2 = get_token_bridge(True, self.args.token_approve, self.args.token_clear, seed_amt=self.seed_amt, tmpl_sig=self.tsig, devMode = devmode)
         print("Generating the teal for the token contracts: " + str(len(b64decode(approval2["result"]))))
 
         if self.devnet:
