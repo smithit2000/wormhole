@@ -17,7 +17,6 @@ sed -i -e 's@export ALGOD_URL=""@export ALGOD_URL="https://github.com/algorand/g
 cd _sandbox
 ./sandbox clean
 ./sandbox up -v dev
-export ALGORAND_GOAL_BIN="$(pwd)/sandbox goal"
 cd ..
 echo running the tests...
 cd test
