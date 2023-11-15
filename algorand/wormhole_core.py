@@ -4,10 +4,7 @@ import sys
 from local_blob import LocalBlob
 from TmplSig import TmplSig
 
-from Cryptodome.Hash import SHA512
 from pyteal import (
-    compileTeal,
-    Mode,
     Expr,
     Subroutine,
     TealType,
@@ -44,12 +41,10 @@ from pyteal import (
     Concat,
     OnComplete,
     Sha512_256,
-    OptimizeOptions,
 )
+from teal import fullyCompileContract
 
 from inspect import currentframe
-
-from os import system
 
 max_keys = 15
 max_bytes_per_key = 127
@@ -58,34 +53,6 @@ bits_per_byte = 8
 bits_per_key = max_bytes_per_key * bits_per_byte
 max_bytes = max_bytes_per_key * max_keys
 max_bits = bits_per_byte * max_bytes
-
-def fullyCompileContract(genTeal, contract: Expr, name, devmode) -> bytes:
-    if genTeal:
-        if devmode:
-            teal = compileTeal(contract, mode=Mode.Application, version=6, assembleConstants=True)
-        else:
-            teal = compileTeal(contract, mode=Mode.Application, version=6, assembleConstants=True, optimize=OptimizeOptions(scratch_slots=True))
-
-        with open(name, "w") as f:
-            print("Writing " + name)
-            f.write(teal)
-    else:
-        with open(name, "r") as f:
-            print("Reading " + name)
-            teal = f.read()
-
-    status = system(f"goal clerk compile --map --outfile '{name + '.bin'}' '{name}' ")
-    if status != 0:
-        raise Exception("Failed to compile")
-
-    with open(name + ".bin", "rb") as contractBin:
-        with open(name + ".hash", "w") as fout:
-            binary = contractBin.read()
-            checksum = SHA512.new(truncate="256")
-            checksum.update(binary)
-            fout.write(checksum.digest().hex())
-
-    return binary
 
 def getCoreContracts(   genTeal, approve_name, clear_name,
                         seed_amt: int,
