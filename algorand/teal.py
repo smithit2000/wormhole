@@ -1,5 +1,5 @@
 import hashlib
-from os import system
+from os import system, environ
 
 from pyteal import (
     compileTeal,
@@ -23,7 +23,8 @@ def fullyCompileContract(genTeal, contract: Expr, name, devmode) -> bytes:
             print("Reading " + name)
             teal = f.read()
 
-    status = system(f"goal clerk compile --map --outfile '{name + '.bin'}' '{name}' ")
+    goalBin = environ["ALGORAND_GOAL_BIN"] or "goal"
+    status = system(f"{goalBin} clerk compile --map --outfile '{name + '.bin'}' '{name}' ")
     if status != 0:
         raise Exception("Failed to compile")
 
