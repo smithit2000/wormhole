@@ -1,5 +1,6 @@
 import hashlib
 from os import system, environ
+from typing import TypedDict
 
 from pyteal import (
     compileTeal,
@@ -8,7 +9,15 @@ from pyteal import (
     OptimizeOptions,
 )
 
-def fullyCompileContract(genTeal, contract: Expr, name, devmode) -> bytes:
+class AssemblyResult(TypedDict):
+    # Bytecode of the TEAL program
+    result: bytes
+    # TEAL -> bytecode map
+    symbol_map: str
+    # SHA512_256 hash of the bytecode
+    hash: str
+
+def fullyCompileContract(genTeal, contract: Expr, name, devmode) -> AssemblyResult:
     if genTeal:
         if devmode:
             teal = compileTeal(contract, mode=Mode.Application, version=6, assembleConstants=True)
@@ -23,7 +32,7 @@ def fullyCompileContract(genTeal, contract: Expr, name, devmode) -> bytes:
             print("Reading " + name)
             teal = f.read()
 
-    goalBin = environ["ALGORAND_GOAL_BIN"] or "goal"
+    goalBin = environ.get("ALGORAND_GOAL_BIN", "goal")
     status = system(f"{goalBin} clerk compile --map --outfile '{name + '.bin'}' '{name}' ")
     if status != 0:
         raise Exception("Failed to compile")
@@ -33,6 +42,10 @@ def fullyCompileContract(genTeal, contract: Expr, name, devmode) -> bytes:
             binary = contractBin.read()
             checksum = hashlib.new("sha512_256")
             checksum.update(binary)
-            fout.write(checksum.hexdigest())
+            hash = checksum.hexdigest()
+            fout.write(hash)
 
-    return binary
+    with open(name + '.bin.map', "r") as mapFile:
+        symbol_map = mapFile.read()
+
+    return { "result": binary, "hash": hash, "symbol_map": symbol_map }

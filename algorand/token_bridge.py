@@ -22,7 +22,7 @@ from pyteal.types import *
 from pyteal.compiler import *
 from pyteal.ir import *
 from globals import *
-from teal import fullyCompileContract
+from teal import fullyCompileContract, AssemblyResult
 
 from TmplSig import TmplSig
 from local_blob import LocalBlob
@@ -1008,7 +1008,7 @@ def approve_token_bridge(seed_amt: int, tmpl_sig: TmplSig, devMode: bool):
         [Txn.on_completion() == OnComplete.NoOp, router]
     )
 
-def get_token_bridge(genTeal, approve_name, clear_name, seed_amt: int, tmpl_sig: TmplSig, devMode: bool) -> Tuple[bytes, bytes]:
+def get_token_bridge(genTeal, approve_name, clear_name, seed_amt: int, tmpl_sig: TmplSig, devMode: bool) -> Tuple[AssemblyResult, AssemblyResult]:
     APPROVAL_PROGRAM = fullyCompileContract(genTeal, approve_token_bridge(seed_amt, tmpl_sig, devMode), approve_name, devMode)
     CLEAR_STATE_PROGRAM = fullyCompileContract(genTeal, clear_token_bridge(), clear_name, devMode)
 

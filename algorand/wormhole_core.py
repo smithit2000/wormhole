@@ -42,7 +42,7 @@ from pyteal import (
     OnComplete,
     Sha512_256,
 )
-from teal import fullyCompileContract
+from teal import fullyCompileContract, AssemblyResult
 
 from inspect import currentframe
 
@@ -58,7 +58,7 @@ def getCoreContracts(   genTeal, approve_name, clear_name,
                         seed_amt: int,
                         tmpl_sig: TmplSig,
                         devMode: bool
-                        ) -> Tuple[bytes, bytes]:
+                        ) -> Tuple[AssemblyResult, AssemblyResult]:
 
     def vaa_processor_program(seed_amt: int, tmpl_sig: TmplSig):
         blob = LocalBlob()
